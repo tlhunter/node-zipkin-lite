@@ -1,0 +1,16 @@
+{
+  "name": "node-zipkin-basic",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["zipkin", "openzipkin"],
+  "author": "Thomas Hunter II <me@thomashunter.name>",
+  "license": "BSD-2-Clause",
+  "devDependencies": {
+    "fastify": "^2.11.0",
+    "node-fetch": "^2.6.0"
+  }
+}
