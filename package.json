@@ -12,5 +12,13 @@
   "devDependencies": {
     "fastify": "^2.11.0",
     "node-fetch": "^2.6.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tlhunter/node-zipkin-basic.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tlhunter/node-zipkin-basic/issues"
+  },
+  "homepage": "https://github.com/tlhunter/node-zipkin-basic#readme"
 }
