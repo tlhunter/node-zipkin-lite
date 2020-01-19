@@ -24,17 +24,37 @@ server.get('/', async (req, reply) => {
   console.log('GET /');
   req.zipkin.setName('get_shallow');
 
-  const zreq = req.zipkin.prepare();
-  const headers = Object.assign({
-    'Content-Type': 'application/json'
-  }, zreq.headers);
-  console.log('CLIENT HEADERS', headers);
-  const result = await fetch('http://localhost:3002/middle/42', {
-    headers
-  });
-  zreq.complete('127.0.0.1', 3002, 'GET', '/middle/42');
+  let response = '';
 
-  return result.text();
+  {
+    const zreq = req.zipkin.prepare();
+    const headers = Object.assign({
+      'Content-Type': 'application/json'
+    }, zreq.headers);
+    console.log('CLIENT HEADERS', headers);
+    const result = await fetch('http://localhost:3002/middle/42', {
+      headers
+    });
+    zreq.complete('127.0.0.1', 3002, 'GET', '/middle/42');
+
+    response += await result.text()
+  }
+
+  {
+    const zreq = req.zipkin.prepare();
+    const headers = Object.assign({
+      'Content-Type': 'application/json'
+    }, zreq.headers);
+    console.log('CLIENT HEADERS', headers);
+    const result = await fetch('http://localhost:3003/deep/42', {
+      headers
+    });
+    zreq.complete('127.0.0.1', 3003, 'GET', '/deep/42');
+
+    response += await result.text()
+  }
+
+  return response;
 });
 
 server.listen(PORT, HOST);

@@ -21,7 +21,13 @@ server.get('/deep/42', async (req, reply) => {
   console.log('GET /deep/42');
   req.zipkin.setName('get_deep');
 
+  await sleep(3);
+
   return 'ok';
 });
 
 server.listen(PORT, HOST);
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
