@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+// This is the "deepest" service, not making any outbound requests
+
 const PORT = process.env.NODE_PORT || 3003;
 const HOST = process.env.NODE_HOST || '127.0.0.1';
 
@@ -17,8 +19,8 @@ const fetch = require('node-fetch');
 server.addHook('onRequest', zipkin.onRequest());
 server.addHook('onResponse', zipkin.onResponse());
 
-server.get('/deep/42', async (req, reply) => {
-  console.log('GET /deep/42');
+server.get('/deep/:id', async (req, reply) => {
+  console.log('GET /deep/:id', req.zipkin.trace);
   req.zipkin.setName('get_deep');
 
   await sleep(3);

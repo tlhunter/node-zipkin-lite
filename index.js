@@ -88,9 +88,13 @@ class ZipkinHeaders {
 
       // console.log('generating a trace id', this.traceId, this.spanId);
     } else {
-      // TODO: Should warn and pass along no headers
+      // TODO: Should emit a warning, no headers will be used
       console.error('NO HEADERS', headers);
-      throw new Error("didn't receive any zipkin data, can't generate on own");
+      this.traceId = undefined;
+      this.spanId = undefined;
+      this.ParentSpanId = undefined;
+      this.sampled = '0';
+      this.flags = undefined;
     }
   }
 
@@ -155,13 +159,28 @@ class Zipkin {
         sampled: headersIn.isSampled(),
         trace: headersIn.traceId,
 
+        // TODO: If we could access the original URL matcher, i.e. extract from `.get('/middle/:id'`
+        //       the GET and /middle/:id parts, we could use that as a default name. However, if we
+        //       just use the raw URL (e.g. /middle/1234), the cardinality of names gets too high.
         name: undefined,
         setName: function(name) {
-          // This approach is lame, would make a cool decorator
+          // Requiring the req.zipkin.setName() call is lame
+          // Something like decorators could help here
           this.name = name;
         },
 
         prepare: () => {
+          if (!headersIn.traceId) {
+            // a non-init (deep) service received a non-zipkin request
+            // we perform basically a no-op here
+            return {
+              complete: () => {},
+              headers: {
+                'X-B3-Sampled': '0'
+              }
+            };
+          }
+
           const start = now();
           const spanId = generateSpanId();
 

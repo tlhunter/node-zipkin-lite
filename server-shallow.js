@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+// This is the "shallowest" service, consumed by end users
+
 const PORT = process.env.NODE_PORT || 3001;
 const HOST = process.env.NODE_HOST || '127.0.0.1';
 
@@ -21,7 +23,7 @@ server.addHook('onRequest', zipkin.onRequest());
 server.addHook('onResponse', zipkin.onResponse());
 
 server.get('/', async (req, reply) => {
-  console.log('GET /');
+  console.log('GET /', req.zipkin.trace);
   req.zipkin.setName('get_shallow');
 
   let response = '';

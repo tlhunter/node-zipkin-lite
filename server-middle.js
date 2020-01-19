@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+// This is the "middle" service, consuming and being consumed
+
 const PORT = process.env.NODE_PORT || 3002;
 const HOST = process.env.NODE_HOST || '127.0.0.1';
 
@@ -17,16 +19,14 @@ const fetch = require('node-fetch');
 server.addHook('onRequest', zipkin.onRequest());
 server.addHook('onResponse', zipkin.onResponse());
 
-server.get('/middle/42', async (req, reply) => {
-  console.log('GET /middle/42');
+server.get('/middle/:id', async (req, reply) => {
+  console.log('GET /middle/:id', req.zipkin.trace);
   req.zipkin.setName('get_middle');
+  console.log(req.zipkin);
 
   const zreq = req.zipkin.prepare();
-  const headers = Object.assign({
-    'Content-Type': 'application/json'
-  }, zreq.headers);
   const url = 'http://localhost:3003/deep/42';
-  const result = await fetch(url, { headers });
+  const result = await fetch(url, { headers: zreq.headers });
   zreq.complete('GET', url);
 
   return result.text();

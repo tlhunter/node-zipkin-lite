@@ -1,5 +1,5 @@
 {
-  "name": "node-zipkin-basic",
+  "name": "node-zipkin-lite",
   "version": "0.0.1",
   "description": "",
   "main": "index.js",
@@ -15,10 +15,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tlhunter/node-zipkin-basic.git"
+    "url": "git+https://github.com/tlhunter/node-zipkin-lite.git"
   },
   "bugs": {
-    "url": "https://github.com/tlhunter/node-zipkin-basic/issues"
+    "url": "https://github.com/tlhunter/node-zipkin-lite/issues"
   },
-  "homepage": "https://github.com/tlhunter/node-zipkin-basic#readme"
+  "homepage": "https://github.com/tlhunter/node-zipkin-lite#readme"
 }
