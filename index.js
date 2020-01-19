@@ -89,7 +89,7 @@ class ZipkinHeaders {
       // console.log('generating a trace id', this.traceId, this.spanId);
     } else {
       // TODO: Should emit a warning, no headers will be used
-      console.error('NO HEADERS', headers);
+      // console.error('NO HEADERS', headers);
       this.traceId = undefined;
       this.spanId = undefined;
       this.ParentSpanId = undefined;
