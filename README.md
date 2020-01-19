@@ -1,4 +1,4 @@
-# node-zipkin-lite
+# zipkin-lite
 
 This is a very basic implementation of [Zipkin](https://zipkin.io/) for Node.js. It is currently intended for educational use, not for use in production.
 
