@@ -5,10 +5,10 @@ const HOST = process.env.NODE_HOST || '127.0.0.1';
 
 const Zipkin = require('./index.js');
 const zipkin = new Zipkin({
-  zipkin_host: 'localhost:9411',
-  service: 'middle-api',
-  port: PORT,
-  ip: HOST,
+  zipkinHost: 'localhost:9411',
+  serviceName: 'middle-api',
+  servicePort: PORT,
+  serviceIp: HOST,
 });
 
 const server = require('fastify')();
@@ -25,11 +25,9 @@ server.get('/middle/42', async (req, reply) => {
   const headers = Object.assign({
     'Content-Type': 'application/json'
   }, zreq.headers);
-  console.log('CLIENT HEADERS', headers);
-  const result = await fetch('http://localhost:3003/deep/42', {
-    headers
-  });
-  zreq.complete('127.0.0.1', 3003, 'GET', '/deep/42');
+  const url = 'http://localhost:3003/deep/42';
+  const result = await fetch(url, { headers });
+  zreq.complete('GET', url);
 
   return result.text();
 });

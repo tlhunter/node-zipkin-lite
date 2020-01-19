@@ -5,10 +5,10 @@ const HOST = process.env.NODE_HOST || '127.0.0.1';
 
 const Zipkin = require('./index.js');
 const zipkin = new Zipkin({
-  zipkin_host: 'localhost:9411',
-  service: 'deep-api',
-  port: PORT,
-  ip: HOST,
+  zipkinHost: 'localhost:9411',
+  serviceName: 'deep-api',
+  servicePort: PORT,
+  serviceIp: HOST,
 });
 
 const server = require('fastify')();

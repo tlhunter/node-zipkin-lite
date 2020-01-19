@@ -5,13 +5,13 @@ const HOST = process.env.NODE_HOST || '127.0.0.1';
 
 const Zipkin = require('./index.js');
 const zipkin = new Zipkin({
-  zipkin_host: 'localhost:9411',
-  service: 'shallow-api',
-  port: PORT,
-  ip: HOST,
-  sample_rate: 1,
-  init_mode: 'long',
-  debug: false
+  zipkinHost: 'localhost:9411',
+  serviceName: 'shallow-api',
+  servicePort: PORT,
+  serviceIp: HOST,
+  sampleRate: 0.5,
+  init: 'long', // long | short | false
+  debug: false // TODO: should be enabled per-request?
 });
 
 const server = require('fastify')();
@@ -31,25 +31,22 @@ server.get('/', async (req, reply) => {
     const headers = Object.assign({
       'Content-Type': 'application/json'
     }, zreq.headers);
-    console.log('CLIENT HEADERS', headers);
-    const result = await fetch('http://localhost:3002/middle/42', {
-      headers
-    });
-    zreq.complete('127.0.0.1', 3002, 'GET', '/middle/42');
+    const url = 'http://localhost:3002/middle/42';
+    const result = await fetch(url, { headers });
+    zreq.complete('GET', url);
 
     response += await result.text()
   }
 
   {
     const zreq = req.zipkin.prepare();
+    await sleep(1);
     const headers = Object.assign({
       'Content-Type': 'application/json'
     }, zreq.headers);
-    console.log('CLIENT HEADERS', headers);
-    const result = await fetch('http://localhost:3003/deep/42', {
-      headers
-    });
-    zreq.complete('127.0.0.1', 3003, 'GET', '/deep/42');
+    const url = 'http://localhost:3003/deep/42';
+    const result = await fetch(url, { headers });
+    zreq.complete('GET', url);
 
     response += await result.text()
   }
@@ -58,3 +55,7 @@ server.get('/', async (req, reply) => {
 });
 
 server.listen(PORT, HOST);
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
