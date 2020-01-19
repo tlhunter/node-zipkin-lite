@@ -74,12 +74,11 @@ class ZipkinHeaders {
       this.parentSpanId = undefined;
 
       if (config.sample_rate === 1) {
-        this.sampled = 1;
+        this.sampled = '1';
       } else if (config.sample_rate === 0) {
-        this.sampled = 0;
+        this.sampled = '0';
       } else {
-        this.sampled = !!(Math.random() < config.sample_rate);
-        // console.log(`determined sample to be ${this.sampled}`);
+        this.sampled = Math.random() < config.sample_rate ? '1' : '0';
       }
 
       this.flags = config.debug ? '1' : undefined;
@@ -90,24 +89,6 @@ class ZipkinHeaders {
       console.error('NO HEADERS', headers);
       throw new Error("didn't receive any zipkin data, can't generate on own");
     }
-  }
-
-  // Generates a list of headers for a client request
-  // Each client request gets a new span ID
-  // The current span ID becomes the parent span ID
-  clientHeaders() {
-    const headers = {
-      'X-B3-TraceId': this.traceId, // Always retain the Trace ID
-      'X-B3-SpanId': generateSpanId(), // Chlient/Server pairs share Span ID
-      'X-B3-ParentSpanId': this.spanId, // This Span ID becomes the parent
-      'X-B3-Sampled': this.sampled, // Pass along Sampled flag
-    };
-
-    if (this.flags) {
-      headers['X-B3-Flags'] = this.flags; // This header is usually missing
-    }
-
-    return headers;
   }
 }
 
@@ -124,10 +105,6 @@ class Zipkin {
     this.sample_rate = 'sample_rate' in config ? Number(config.sample_rate) : 1;
 
     this.debug = !!config.debug;
-
-    this.tags = config.tags && typeof config.tags === 'object'
-      ? config.tags
-      : undefined;
 
     if (config.ip) {
       // TODO: This is a hack, switch to a better address parser
@@ -152,25 +129,52 @@ class Zipkin {
     return async (req, reply) => {
       // TODO: req.headers['x-forwarded-for'] considerations, trust proxy flag
       // TODO: req.ip can be a comma separated string
-      const client_ip = req.ip;
-      const headers = new ZipkinHeaders(req.headers, {
+      const incoming_context_headers = new ZipkinHeaders(req.headers, {
         init_mode: this.init_mode,
         sample_rate: this.sample_rate,
         debug: this.debug
       });
 
-      const config = {
-        client_ip,
-        timestamp_start: getCurrentTimestamp(),
-        name: undefined, // TODO: decorator?
-      };
-
       // Attach zipkin data to request object
       req.zipkin = {
-        config,
-        headers,
-        setName: (name) => {
-          config.name = name;
+        timestamp_start: getCurrentTimestamp(),
+        name: undefined,
+        headers: incoming_context_headers,
+        setName: function(name) {
+          // This approach is lame, would make a cool decorator
+          this.name = name;
+        },
+        prepare: () => {
+          const start = getCurrentTimestamp();
+          const spanId = generateSpanId();
+
+          const client_headers = {
+            'X-B3-TraceId': incoming_context_headers.traceId,
+            'X-B3-SpanId': spanId,
+            'X-B3-ParentSpanId': incoming_context_headers.spanId,
+            'X-B3-Sampled': incoming_context_headers.sampled,
+          };
+
+          if (incoming_context_headers.flags) {
+            client_headers['X-B3-Flags'] = incoming_context_headers.flags; // This header is usually missing
+          }
+
+          return {
+            complete: (server_ip, server_port, method, path) => {
+              const payload = this.buildClientPayload({
+                req,
+                method,
+                path,
+                ip: server_ip,
+                port: server_port,
+                start,
+                spanId,
+                parentSpanId: incoming_context_headers.spanId
+              });
+              this.transmit(payload);
+            },
+            headers: client_headers
+          };
         },
       };
     };
@@ -188,17 +192,17 @@ class Zipkin {
   }
 
   buildServerPayload(req) {
-    const client_ip_mode = req.zipkin.config.client_ip.includes('.')
+    const client_ip_mode = req.ip.includes('.')
       ? 'ipv4'
       : 'ipv6';
 
     return {
       id: req.zipkin.headers.spanId, // Current Span ID
       traceId: req.zipkin.headers.traceId, // Overall Trace ID
-      name: req.zipkin.config.name, // RPC method name: "remove_user" or "DELETE /v1/api/user"
+      name: req.zipkin.name, // RPC method name: "remove_user" or "DELETE /v1/api/user"
       parentId: req.zipkin.headers.parentSpanId, // Span ID of parent operation
-      timestamp: req.zipkin.config.timestamp_start,
-      duration: getCurrentTimestamp() - req.zipkin.config.timestamp_start,
+      timestamp: req.zipkin.timestamp_start,
+      duration: getCurrentTimestamp() - req.zipkin.timestamp_start,
       kind: KIND.SERVER,
       localEndpoint: {
         serviceName: this.service_name,
@@ -206,17 +210,41 @@ class Zipkin {
         port: this.my_port,
       },
       remoteEndpoint: {
-        [client_ip_mode]: req.zipkin.config.client_ip,
-        // port: undefined, // server doesn't know client port
+        [client_ip_mode]: req.ip,
       },
       tags: {
         'http.method': req.raw.method,
-        'http.path': req.raw.path,
+        'http.path': req.raw.url,
       }
     };
   }
 
-  buildClientPayload() {
+  buildClientPayload({req, method, path, ip, port, start, spanId, parentSpanId}) {
+    const server_ip_mode = ip.includes('.')
+      ? 'ipv4'
+      : 'ipv6';
+
+    return {
+      id: spanId,
+      traceId: req.zipkin.headers.traceId,
+      parentId: parentSpanId,
+      timestamp: start,
+      duration: getCurrentTimestamp() - start,
+      kind: KIND.CLIENT,
+      localEndpoint: {
+        serviceName: this.service_name,
+        [this.ip_mode]: this.ip,
+        port: this.my_port,
+      },
+      remoteEndpoint: {
+        [server_ip_mode]: req.ip,
+        port,
+      },
+      tags: {
+        'http.method': method,
+        'http.path': path,
+      }
+    };
   }
 
   // TODO: Allow batching of spans before transmitting

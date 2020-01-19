@@ -9,9 +9,6 @@ const zipkin = new Zipkin({
   service: 'middle-api',
   port: PORT,
   ip: HOST,
-  tags: {
-    coolstuff: true,
-  },
 });
 
 const server = require('fastify')();
@@ -24,20 +21,17 @@ server.get('/middle/42', async (req, reply) => {
   console.log('GET /middle/42');
   req.zipkin.setName('get_middle');
 
+  const zreq = req.zipkin.prepare();
   const headers = Object.assign({
     'Content-Type': 'application/json'
-  }, req.zipkin.headers.clientHeaders());
-
-  // const zreq = req.zipkin.prepare('deep-api', 'get_root')
+  }, zreq.headers);
+  console.log('CLIENT HEADERS', headers);
   const result = await fetch('http://localhost:3003/deep/42', {
     headers
-    // }, zreq.headers);
   });
-  const body = await result.text();
-  // req.zipkin.complete(zreq, 4001, result.ip);
-  //
+  zreq.complete('127.0.0.1', 3003, 'GET', '/deep/42');
 
-  return body;
+  return result.text();
 });
 
 server.listen(PORT, HOST);

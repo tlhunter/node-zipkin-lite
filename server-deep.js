@@ -9,9 +9,6 @@ const zipkin = new Zipkin({
   service: 'deep-api',
   port: PORT,
   ip: HOST,
-  tags: {
-    coolstuff: true,
-  }
 });
 
 const server = require('fastify')();

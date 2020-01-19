@@ -9,9 +9,6 @@ const zipkin = new Zipkin({
   service: 'shallow-api',
   port: PORT,
   ip: HOST,
-  tags: {
-    coolstuff: true,
-  },
   sample_rate: 1,
   init_mode: 'long',
   debug: false
@@ -27,20 +24,17 @@ server.get('/', async (req, reply) => {
   console.log('GET /');
   req.zipkin.setName('get_shallow');
 
+  const zreq = req.zipkin.prepare();
   const headers = Object.assign({
     'Content-Type': 'application/json'
-  }, req.zipkin.headers.clientHeaders());
-
-  // const zreq = req.zipkin.prepare('middle-api', 'get_root')
+  }, zreq.headers);
+  console.log('CLIENT HEADERS', headers);
   const result = await fetch('http://localhost:3002/middle/42', {
     headers
-    // }, zreq.headers);
   });
-  const body = await result.text();
-  // req.zipkin.complete(zreq, 4001, result.ip);
-  //
+  zreq.complete('127.0.0.1', 3002, 'GET', '/middle/42');
 
-  return body;
+  return result.text();
 });
 
 server.listen(PORT, HOST);

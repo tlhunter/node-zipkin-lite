@@ -26,3 +26,4 @@ See [example-producer.js](./example-producer.js) and [example-consumer.js](./exa
 - `X-Forwarded-For` / proxy IP address parsing
 - Microsecond accuracy (uses millisecond * 1000)
 - Single `b3` header
+- User-supplied tags (only opinionated `http.method` and `http.path` are supported)
