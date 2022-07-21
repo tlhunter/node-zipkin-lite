@@ -2,7 +2,7 @@
 
 This is a very basic implementation of [Zipkin](https://zipkin.io/) for Node.js. It is currently intended for educational use, not for use in production.
 
-It was created for use with “Distributed Node.js”, a book that hasn't yet been published. The goal is to require manual instrumentation to help users understand the Zipkin concept, require no third party dependencies, and provide an idiomatic Node.js interface.
+It was created for use with [Distributed Systems with Node.js](https://thomashunter.name/distributed-systems-with-nodejs), a book that was published in 2020. The goal is to require manual instrumentation to help users understand the Zipkin concept, require no third party dependencies, and provide an idiomatic Node.js interface.
 
 For a production project, consider using the [official `zipkin` npm module](https://github.com/openzipkin/zipkin-js).
 
